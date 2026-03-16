@@ -1,5 +1,6 @@
 import { UserButton } from "@clerk/nextjs";
 import { getDashboardData } from "@/actions/coinActions";
+import { COOLDOWN_DAYS } from "@/lib/constants";
 import CoinDisplay from "@/components/CoinDisplay";
 import CoinButton from "@/components/CoinButton";
 import UseCoinsButton from "@/components/UseCoinsButton";
@@ -8,6 +9,13 @@ import Image from "next/image";
 
 export default async function DashboardPage() {
   const data = await getDashboardData();
+
+  const lastEarnedAt = data.clickHistory.find((l) => l.type === "earned")?.clickedAt ?? null;
+  const diffDays = lastEarnedAt
+    ? (Date.now() - new Date(lastEarnedAt).getTime()) / (1000 * 60 * 60 * 24)
+    : Infinity;
+  const canClick = diffDays >= COOLDOWN_DAYS;
+  const daysRemaining = canClick ? 0 : Math.ceil(COOLDOWN_DAYS - diffDays);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-sky-200 to-yellow-100 flex flex-col items-center px-4 py-6 gap-6">
@@ -25,10 +33,10 @@ export default async function DashboardPage() {
         <CoinDisplay gCoins={data.gCoins} />
 
         {/* がまんボタン */}
-        <CoinButton canClick={data.canClick} daysRemaining={data.daysRemaining} />
+        <CoinButton canClick={canClick} daysRemaining={daysRemaining} />
 
         {/* つかうボタン */}
-        <UseCoinsButton gCoins={data.gCoins} />
+        <UseCoinsButton gCoins={data.gCoins} canClick={canClick} />
       </div>
 
       {/* ログ */}

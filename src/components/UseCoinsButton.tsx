@@ -5,9 +5,10 @@ import { useCoins } from "@/actions/coinActions";
 
 interface UseCoinsButtonProps {
   gCoins: number;
+  canClick: boolean;
 }
 
-export default function UseCoinsButton({ gCoins }: UseCoinsButtonProps) {
+export default function UseCoinsButton({ gCoins, canClick }: UseCoinsButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -31,8 +32,8 @@ export default function UseCoinsButton({ gCoins }: UseCoinsButtonProps) {
     <>
       <button
         onClick={() => setShowConfirm(true)}
-        disabled={isPending}
-        className="mt-4 px-8 py-3 rounded-full bg-pink-400 hover:bg-pink-300 text-white font-bold text-lg shadow-md transition-all active:scale-95 disabled:opacity-50"
+        disabled={isPending || !canClick}
+        className="mt-4 px-8 py-3 rounded-full bg-pink-400 hover:bg-pink-300 text-white font-bold text-lg shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
       >
         🎁 おかね を つかう
       </button>

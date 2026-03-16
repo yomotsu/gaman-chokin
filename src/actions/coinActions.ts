@@ -2,12 +2,13 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { COOLDOWN_DAYS } from "@/lib/constants";
 
 const COIN_REWARD = 1000;
-const COOLDOWN_DAYS = 5;
 
 export interface ClickLog {
   clickedAt: string;
+  type: "earned" | "spent";
   location: string | null;
 }
 
@@ -48,14 +49,14 @@ export async function addCoin(location: string | null): Promise<{ success: boole
   const user = await client.users.getUser(userId);
   const meta = getMetadata(user);
 
-  const lastClickedAt = meta.clickHistory[0]?.clickedAt ?? null;
-  if (!canClick(lastClickedAt)) {
-    return { success: false, message: `まだおやすみちゅう（あと${daysRemaining(lastClickedAt)}日）` };
+  const lastEarnedAt = meta.clickHistory.find((l) => l.type === "earned")?.clickedAt ?? null;
+  if (!canClick(lastEarnedAt)) {
+    return { success: false, message: `まだおやすみちゅう（あと${daysRemaining(lastEarnedAt)}日）` };
   }
 
   const now = new Date().toISOString();
   const newHistory: ClickLog[] = [
-    { clickedAt: now, location },
+    { clickedAt: now, type: "earned", location },
     ...meta.clickHistory,
   ].slice(0, 100); // 最大100件保持
 
@@ -82,10 +83,16 @@ export async function useCoins(): Promise<{ success: boolean; message: string }>
     return { success: false, message: "Gコインがないよ" };
   }
 
+  const now = new Date().toISOString();
+  const newHistory: ClickLog[] = [
+    { clickedAt: now, type: "spent", location: null },
+    ...meta.clickHistory,
+  ].slice(0, 100);
+
   await client.users.updateUserMetadata(userId, {
     publicMetadata: {
-      ...meta,
       gCoins: 0,
+      clickHistory: newHistory,
     },
   });
 
@@ -93,18 +100,11 @@ export async function useCoins(): Promise<{ success: boolean; message: string }>
   return { success: true, message: "Gコインをつかったよ！" };
 }
 
-export async function getDashboardData(): Promise<GamanMetadata & { canClick: boolean; daysRemaining: number }> {
+export async function getDashboardData(): Promise<GamanMetadata> {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
-  const meta = getMetadata(user);
-
-  const lastClickedAt = meta.clickHistory[0]?.clickedAt ?? null;
-  return {
-    ...meta,
-    canClick: canClick(lastClickedAt),
-    daysRemaining: daysRemaining(lastClickedAt),
-  };
+  return getMetadata(user);
 }

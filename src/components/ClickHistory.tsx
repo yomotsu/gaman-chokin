@@ -25,9 +25,13 @@ export default function ClickHistory({ history }: ClickHistoryProps) {
         {history.slice(0, 20).map((log, i) => (
           <div key={i} className="flex items-center justify-between px-4 py-2 text-sm">
             <span className="text-gray-700">{formatDate(log.clickedAt)}</span>
-            <span className="text-gray-500 text-xs ml-2 truncate max-w-[140px]">
-              {log.location ?? "場所不明"}
-            </span>
+            {log.type === "spent" ? (
+              <span className="text-pink-500 text-xs font-bold ml-2">つかった</span>
+            ) : (
+              <span className="text-gray-500 text-xs ml-2 truncate max-w-[140px]">
+                {log.location ?? "場所不明"}
+              </span>
+            )}
           </div>
         ))}
       </div>
