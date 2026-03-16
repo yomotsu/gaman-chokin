@@ -56,7 +56,7 @@ export async function addCoin(location: string | null): Promise<{ success: boole
 
   const now = new Date().toISOString();
   const newHistory: ClickLog[] = [
-    { clickedAt: now, type: "earned", location },
+    { clickedAt: now, type: "earned" as const, location },
     ...meta.clickHistory,
   ].slice(0, 100); // 最大100件保持
 
@@ -85,7 +85,7 @@ export async function useCoins(): Promise<{ success: boolean; message: string }>
 
   const now = new Date().toISOString();
   const newHistory: ClickLog[] = [
-    { clickedAt: now, type: "spent", location: null },
+    { clickedAt: now, type: "spent" as const, location: null },
     ...meta.clickHistory,
   ].slice(0, 100);
 
