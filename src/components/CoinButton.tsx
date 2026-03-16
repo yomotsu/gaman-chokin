@@ -32,8 +32,7 @@ async function getLocation(): Promise<string | null> {
           resolve(null);
         }
       },
-      () => resolve(null),
-      { timeout: 5000 }
+      () => resolve(null)
     );
   });
 }
@@ -89,8 +88,8 @@ export default function CoinButton({ canClick, daysRemaining }: CoinButtonProps)
         ) : (
           <>
             <span className="text-4xl">🌟</span>
-            <span>がまんした！</span>
-            <span className="text-sm">+1000G</span>
+            <span>がまんする！</span>
+            <span className="text-sm">+1000円</span>
           </>
         )}
       </button>

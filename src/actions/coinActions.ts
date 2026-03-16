@@ -13,7 +13,6 @@ export interface ClickLog {
 
 export interface GamanMetadata {
   gCoins: number;
-  lastClickedAt: string | null;
   clickHistory: ClickLog[];
 }
 
@@ -21,7 +20,6 @@ function getMetadata(user: { publicMetadata: Record<string, unknown> }): GamanMe
   const meta = user.publicMetadata as Partial<GamanMetadata>;
   return {
     gCoins: typeof meta.gCoins === "number" ? meta.gCoins : 0,
-    lastClickedAt: typeof meta.lastClickedAt === "string" ? meta.lastClickedAt : null,
     clickHistory: Array.isArray(meta.clickHistory) ? meta.clickHistory : [],
   };
 }
@@ -50,8 +48,9 @@ export async function addCoin(location: string | null): Promise<{ success: boole
   const user = await client.users.getUser(userId);
   const meta = getMetadata(user);
 
-  if (!canClick(meta.lastClickedAt)) {
-    return { success: false, message: `まだおやすみちゅう（あと${daysRemaining(meta.lastClickedAt)}日）` };
+  const lastClickedAt = meta.clickHistory[0]?.clickedAt ?? null;
+  if (!canClick(lastClickedAt)) {
+    return { success: false, message: `まだおやすみちゅう（あと${daysRemaining(lastClickedAt)}日）` };
   }
 
   const now = new Date().toISOString();
@@ -63,7 +62,6 @@ export async function addCoin(location: string | null): Promise<{ success: boole
   await client.users.updateUserMetadata(userId, {
     publicMetadata: {
       gCoins: meta.gCoins + COIN_REWARD,
-      lastClickedAt: now,
       clickHistory: newHistory,
     },
   });
@@ -103,9 +101,10 @@ export async function getDashboardData(): Promise<GamanMetadata & { canClick: bo
   const user = await client.users.getUser(userId);
   const meta = getMetadata(user);
 
+  const lastClickedAt = meta.clickHistory[0]?.clickedAt ?? null;
   return {
     ...meta,
-    canClick: canClick(meta.lastClickedAt),
-    daysRemaining: daysRemaining(meta.lastClickedAt),
+    canClick: canClick(lastClickedAt),
+    daysRemaining: daysRemaining(lastClickedAt),
   };
 }
