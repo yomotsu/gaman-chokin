@@ -1,11 +1,14 @@
 "use client";
 
-import { useTransition, useState } from "react";
-import { addCoin } from "@/actions/coinActions";
+import { useTransition } from "react";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 interface CoinButtonProps {
   canClick: boolean;
   daysRemaining: number;
+  skipCooldown?: boolean;
+  onAfterClick?: () => void;
 }
 
 async function getLocation(): Promise<string | null> {
@@ -23,8 +26,11 @@ async function getLocation(): Promise<string | null> {
           );
           const data = await res.json();
           const addr = data.address;
-          // 都道府県＋市区町村レベル
-          const place = [addr.state, addr.county || addr.city || addr.town || addr.village]
+          const place = [
+            addr.state,
+            addr.city || addr.county || addr.town || addr.village,
+            addr.suburb || addr.quarter || addr.neighbourhood,
+          ]
             .filter(Boolean)
             .join(" ");
           resolve(place || null);
@@ -37,20 +43,15 @@ async function getLocation(): Promise<string | null> {
   });
 }
 
-export default function CoinButton({ canClick, daysRemaining }: CoinButtonProps) {
+export default function CoinButton({ canClick, daysRemaining, skipCooldown, onAfterClick }: CoinButtonProps) {
   const [isPending, startTransition] = useTransition();
-  const [toast, setToast] = useState<string | null>(null);
-
-  function showToast(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  }
+  const addCoin = useMutation(api.children.addCoin);
 
   function handleClick() {
     startTransition(async () => {
       const location = await getLocation();
-      const result = await addCoin(location);
-      showToast(result.message);
+      const result = await addCoin({ location, skipCooldown });
+      if (result.success) onAfterClick?.();
     });
   }
 
@@ -93,11 +94,6 @@ export default function CoinButton({ canClick, daysRemaining }: CoinButtonProps)
           </>
         )}
       </button>
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-white border-2 border-yellow-400 rounded-2xl px-6 py-3 shadow-xl text-lg font-bold text-yellow-700 animate-bounce z-50">
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

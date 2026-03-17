@@ -1,7 +1,8 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { useCoins } from "@/actions/coinActions";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 interface UseCoinsButtonProps {
   gCoins: number;
@@ -11,18 +12,12 @@ interface UseCoinsButtonProps {
 export default function UseCoinsButton({ gCoins, canClick }: UseCoinsButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-
-  function showToast(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  }
+  const spendCoins = useMutation(api.children.spendCoins);
 
   function handleConfirm() {
     setShowConfirm(false);
     startTransition(async () => {
-      const result = await useCoins();
-      showToast(result.message);
+      await spendCoins({});
     });
   }
 
@@ -64,11 +59,6 @@ export default function UseCoinsButton({ gCoins, canClick }: UseCoinsButtonProps
         </div>
       )}
 
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-white border-2 border-pink-400 rounded-2xl px-6 py-3 shadow-xl text-lg font-bold text-pink-600 animate-bounce z-50">
-          {toast}
-        </div>
-      )}
     </>
   );
 }
